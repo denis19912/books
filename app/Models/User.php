@@ -48,11 +48,12 @@ class User extends Authenticatable
         ];
     }
 
-        /**
+    /**
      * Get the books for the user.
      */
     public function books()
     {
-        return $this->hasMany(Book::class);
+        return $this->hasMany(\App\Models\Book::class); // Or just Book::class if you have `use App\Models\Book;` at the top
     }
+
 }

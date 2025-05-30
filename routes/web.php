@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BookController; // Make sure BookController is imported
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 /*
@@ -19,14 +20,22 @@ use Inertia\Inertia;
 |
 */
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [ // Or 'Auth/Login' if you want login as the landing
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+Route::get('/dashboard', function () {
+    $user = Auth::user(); // Get the authenticated user
+
+    // Calculate the stats
+    $totalBooks =1;
+    $booksRead = 2;
+    $booksUnread =0;
+
+    // Pass the stats to the Dashboard.jsx component
+    return Inertia::render('Dashboard', [
+        'totalBooks' => $totalBooks,
+        'booksRead' => $booksRead,
+        'booksUnread' => $booksUnread,
     ]);
-});
+})->middleware(['auth', 'verified'])->name('dashboard');
+
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');

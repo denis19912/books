@@ -2,11 +2,31 @@
 import React, { useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import BookForm from '@/Components/BookForm';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, router } from '@inertiajs/react';
 import DangerButton from '@/Components/DangerButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function Edit({ auth, book }) { // `book` prop is passed from controller
+// Helper function to safely format date (consistent with other forms)
+const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    try {
+        // Ensure dateString is treated as local if it's just YYYY-MM-DD by appending time
+        // Or if it includes time, new Date() should handle it.
+        // Adding 'T00:00:00Z' assumes the date string from DB is UTC if it's just a date.
+        // If your dates are stored with timezone or are already local, adjust accordingly.
+        const date = new Date(dateString.includes('T') ? dateString : dateString + 'T00:00:00Z');
+        if (isNaN(date.getTime())) {
+            // console.warn(`Invalid date string received in Edit: ${dateString}`);
+            return ''; 
+        }
+        return date.toISOString().split('T')[0];
+    } catch (error) {
+        // console.error(`Error formatting date in Edit: ${dateString}`, error);
+        return ''; 
+    }
+};
+
+export default function Edit({ auth, book }) { 
     const { data, setData, put, processing, errors, reset } = useForm({
         title: book.title || '',
         author: book.author || '',
@@ -14,25 +34,24 @@ export default function Edit({ auth, book }) { // `book` prop is passed from con
         description: book.description || '',
         cover_image_url: book.cover_image_url || '',
         is_read: book.is_read || false,
-        published_date: book.published_date || '',
+        published_date: formatDateForInput(book.published_date), 
         page_count: book.page_count || '',
         custom_notes: book.custom_notes || '',
     });
 
-    // If the book prop changes (e.g., due to navigation), reset the form.
     useEffect(() => {
-        reset({
+        setData({ 
             title: book.title || '',
             author: book.author || '',
             isbn: book.isbn || '',
             description: book.description || '',
             cover_image_url: book.cover_image_url || '',
             is_read: book.is_read || false,
-            published_date: book.published_date ? new Date(book.published_date).toISOString().split('T')[0] : '', // Format for date input
+            published_date: formatDateForInput(book.published_date),
             page_count: book.page_count || '',
             custom_notes: book.custom_notes || '',
         });
-    }, [book]);
+    }, [book]); 
 
     const submit = (e) => {
         e.preventDefault();
@@ -40,7 +59,7 @@ export default function Edit({ auth, book }) { // `book` prop is passed from con
     };
 
     const deleteBook = () => {
-        if (window.confirm('Are you sure you want to delete this book?')) {
+        if (window.confirm(`Are you sure you want to delete "${book.title}"? This action cannot be undone.`)) {
             router.delete(route('books.destroy', book.id));
         }
     };
@@ -50,10 +69,10 @@ export default function Edit({ auth, book }) { // `book` prop is passed from con
         <AuthenticatedLayout
             user={auth.user}
             header={
-                <div className="flex justify-between items-center">
-                     <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Edit Book: {book.title}</h2>
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+                     <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Edit: {book.title}</h2>
                      <Link href={route('books.index')}>
-                        <SecondaryButton>Back to My Books</SecondaryButton>
+                        <SecondaryButton className="w-full sm:w-auto justify-center">Back to My Books</SecondaryButton>
                     </Link>
                 </div>
             }
@@ -62,11 +81,11 @@ export default function Edit({ auth, book }) { // `book` prop is passed from con
 
             <div className="py-12">
                 <div className="max-w-2xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900 dark:text-white">
-                           <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Book Details</h3>
-                                <DangerButton onClick={deleteBook} disabled={processing}>
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+                        <div className="p-6 sm:p-8 text-gray-900 dark:text-gray-100">
+                           <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Book Details</h3>
+                                <DangerButton onClick={deleteBook} disabled={processing} className="w-full sm:w-auto justify-center">
                                     Delete Book
                                 </DangerButton>
                             </div>
@@ -77,6 +96,11 @@ export default function Edit({ auth, book }) { // `book` prop is passed from con
                                 onSubmit={submit}
                                 processing={processing}
                                 submitButtonText="Update Book"
+                                // If you re-add cover image uploads, pass relevant props here
+                                // currentCoverImageUrl={data.cover_image_url}
+                                // onCoverImageChange={handleCoverImageChange}
+                                // newCoverImagePreview={newCoverImagePreview}
+                                // clearNewCoverImage={clearNewCoverImage}
                             />
                         </div>
                     </div>

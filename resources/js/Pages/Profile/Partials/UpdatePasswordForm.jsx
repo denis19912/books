@@ -1,3 +1,4 @@
+// resources/js/Pages/Profile/Partials/UpdatePasswordForm.jsx
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -47,11 +48,11 @@ export default function UpdatePasswordForm({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                     Update Password
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     Ensure your account is using a long, random password to stay
                     secure.
                 </p>
@@ -62,6 +63,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                     <InputLabel
                         htmlFor="current_password"
                         value="Current Password"
+                        className="dark:text-gray-300"
                     />
 
                     <TextInput
@@ -72,7 +74,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                             setData('current_password', e.target.value)
                         }
                         type="password"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700"
                         autoComplete="current-password"
                     />
 
@@ -83,7 +85,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="password" value="New Password" />
+                    <InputLabel htmlFor="password" value="New Password" className="dark:text-gray-300" />
 
                     <TextInput
                         id="password"
@@ -91,7 +93,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700"
                         autoComplete="new-password"
                     />
 
@@ -102,6 +104,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                     <InputLabel
                         htmlFor="password_confirmation"
                         value="Confirm Password"
+                        className="dark:text-gray-300"
                     />
 
                     <TextInput
@@ -111,7 +114,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                             setData('password_confirmation', e.target.value)
                         }
                         type="password"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700"
                         autoComplete="new-password"
                     />
 
@@ -122,7 +125,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing} className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600">Save</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -131,7 +134,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                             Saved.
                         </p>
                     </Transition>

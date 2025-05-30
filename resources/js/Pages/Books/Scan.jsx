@@ -6,19 +6,36 @@ import { Head, usePage, router, Link } from '@inertiajs/react';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 
+// SVG Icons for status messages (optional, but can make it prettier)
+const CheckCircleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-2 inline">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+    </svg>
+);
+const ExclamationTriangleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-2 inline">
+        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+    </svg>
+);
+const InformationCircleIcon = () => (
+     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-2 inline">
+        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+    </svg>
+);
+
+
 export default function ScanBookPage({ auth }) {
     const { props } = usePage();
     const [scanResult, setScanResult] = useState({
-        type: '', // 'info', 'processing', 'found_in_library', 'not_in_library_prompt_add', 'adding_book', 'added_to_library', 'error_scanner', 'error_server'
+        type: '', 
         message: '',
-        book: null, // Stores details of found book OR ISBN for prompting add
-        isbnToConfirm: null, // Store ISBN if user needs to confirm adding it
+        book: null, 
+        isbnToConfirm: null, 
     });
     const [lastScannedIsbn, setLastScannedIsbn] = useState('');
-    const [isProcessingScan, setIsProcessingScan] = useState(false); // For initial scan check
-    const [isConfirmingAdd, setIsConfirmingAdd] = useState(false); // For the "add book" action
+    const [isProcessingScan, setIsProcessingScan] = useState(false); 
+    const [isConfirmingAdd, setIsConfirmingAdd] = useState(false); 
 
-    // Handle flash messages from server redirects
     useEffect(() => {
         if (props.flash) {
             const { scan_result_type, message, scanned_book_details, scanned_isbn } = props.flash;
@@ -26,7 +43,7 @@ export default function ScanBookPage({ auth }) {
             if (scan_result_type === 'not_in_library_prompt_add') {
                 setScanResult({
                     type: 'not_in_library_prompt_add',
-                    message: message || `ISBN ${scanned_isbn} is not in your library. Would you like to try and add it?`,
+                    message: message || `ISBN ${scanned_isbn || lastScannedIsbn} is not in your library. Add it?`,
                     book: null,
                     isbnToConfirm: scanned_isbn || lastScannedIsbn,
                 });
@@ -43,21 +60,19 @@ export default function ScanBookPage({ auth }) {
                 setScanResult({ type: 'error_server', message: props.flash.error, book: null, isbnToConfirm: null });
             }
 
-            setIsProcessingScan(false); // Ensure initial processing state is cleared
-            setIsConfirmingAdd(false);  // Ensure add confirmation processing state is cleared
+            setIsProcessingScan(false); 
+            setIsConfirmingAdd(false);  
 
-            // Clear message after some time, unless it's a prompt to add
             if (scan_result_type !== 'not_in_library_prompt_add') {
                 const timer = setTimeout(() => {
                     setScanResult({ type: '', message: '', book: null, isbnToConfirm: null });
                     setLastScannedIsbn('');
-                }, 10000);
+                }, 10000); // Keep result for 10s
                 return () => clearTimeout(timer);
             }
         }
-    }, [props.flash, lastScannedIsbn]); // Added lastScannedIsbn to ensure prompt gets correct ISBN if flash is slightly delayed
+    }, [props.flash, lastScannedIsbn]); 
 
-    // Handle validation errors
     useEffect(() => {
         if (props.errors && Object.keys(props.errors).length > 0) {
             const errorString = Object.values(props.errors).join(' ');
@@ -68,25 +83,23 @@ export default function ScanBookPage({ auth }) {
     }, [props.errors]);
 
     const handleInitialScan = (isbn) => {
-        setScanResult({ type: 'processing', message: `ISBN Detected: ${isbn}. Checking your library...`, book: null, isbnToConfirm: null });
+        setScanResult({ type: 'processing', message: `ISBN: ${isbn}. Checking library...`, book: null, isbnToConfirm: null });
         setLastScannedIsbn(isbn);
         setIsProcessingScan(true);
-        setIsConfirmingAdd(false); // Reset this
+        setIsConfirmingAdd(false); 
 
         router.post(route('books.handleScan'), { isbn }, {
             onError: (errors) => {
                 const errorMessages = Object.values(errors).join(' ');
-                setScanResult({ type: 'error_server', message: `Error checking ISBN: ${errorMessages || 'An unknown error occurred.'}`, book: null, isbnToConfirm: null });
+                setScanResult({ type: 'error_server', message: `Error checking ISBN: ${errorMessages || 'Unknown error.'}`, book: null, isbnToConfirm: null });
             },
             onFinish: () => {
                 setIsProcessingScan(false);
-                // Further state updates will be handled by props.flash useEffect
-                // or if type is still 'processing' after onFinish, it means flash was not sufficient
                 setScanResult(currentResult => {
                     if (currentResult.type === 'processing' && !props.flash?.scan_result_type && !props.flash?.success && !props.flash?.error) {
                         return {
                             type: 'info',
-                            message: `Scan for ISBN ${isbn} processed. Server response might not have specific details.`,
+                            message: `Scan for ISBN ${isbn} processed. Server response unclear.`,
                             book: null,
                             isbnToConfirm: null
                         };
@@ -99,17 +112,16 @@ export default function ScanBookPage({ auth }) {
 
     const handleConfirmAddBook = () => {
         if (!scanResult.isbnToConfirm) return;
-        setScanResult(prev => ({ ...prev, type: 'adding_book', message: `Attempting to add ISBN: ${scanResult.isbnToConfirm}...` }));
+        setScanResult(prev => ({ ...prev, type: 'adding_book', message: `Adding ISBN: ${scanResult.isbnToConfirm}...` }));
         setIsConfirmingAdd(true);
 
-        router.post(route('books.confirmAdd'), { isbn: scanResult.isbnToConfirm }, { // New route
+        router.post(route('books.confirmAdd'), { isbn: scanResult.isbnToConfirm }, { 
             onError: (errors) => {
                 const errorMessages = Object.values(errors).join(' ');
-                setScanResult({ type: 'error_server', message: `Error adding book: ${errorMessages || 'An unknown error occurred.'}`, book: null, isbnToConfirm: null });
+                setScanResult({ type: 'error_server', message: `Error adding book: ${errorMessages || 'Unknown error.'}`, book: null, isbnToConfirm: null });
             },
             onFinish: () => {
                 setIsConfirmingAdd(false);
-                // Success/further error messages will be handled by props.flash useEffect
             }
         });
     };
@@ -127,16 +139,18 @@ export default function ScanBookPage({ auth }) {
         setIsConfirmingAdd(false);
     };
     
-    const showScanner = !scanResult.message && !isProcessingScan && !isConfirmingAdd && !scanResult.isbnToConfirm;
+    // Determine when to show the scanner: not processing, no active message/prompt
+    const showScanner = !isProcessingScan && !isConfirmingAdd && !scanResult.type;
+
 
     return (
         <AuthenticatedLayout
             user={auth.user}
             header={
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
                     <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Scan & Find/Add Book</h2>
                     <Link href={route('books.index')}>
-                        <PrimaryButton>My Books List</PrimaryButton>
+                        <PrimaryButton className="w-full sm:w-auto justify-center">My Books List</PrimaryButton>
                     </Link>
                 </div>
             }
@@ -145,82 +159,97 @@ export default function ScanBookPage({ auth }) {
 
             <div className="py-12">
                 <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900 dark:text-gray-100">
-                            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                                Scan a book's barcode to check your library or add it.
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+                        <div className="p-6 sm:p-8 text-gray-900 dark:text-gray-100">
+                            <p className="mb-6 text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                                Use your device's camera to scan a book's barcode (ISBN). This will check if the book is already in your library or allow you to quickly add it.
                             </p>
                             
                             {showScanner && (
-                                <BarcodeScanner
-                                    onDetected={handleInitialScan}
-                                    onScannerError={handleScannerError}
-                                />
+                                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-inner bg-gray-50 dark:bg-gray-800/30">
+                                    <BarcodeScanner
+                                        onDetected={handleInitialScan}
+                                        onScannerError={handleScannerError}
+                                    />
+                                </div>
                             )}
 
                             {(isProcessingScan || isConfirmingAdd) && (
-                                <p className="mt-4 text-center text-blue-600 dark:text-blue-400">
-                                    {isProcessingScan && `Checking your library for ISBN: ${lastScannedIsbn}...`}
-                                    {isConfirmingAdd && `Adding book with ISBN: ${scanResult.isbnToConfirm}...`}
-                                </p>
+                                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md text-center">
+                                    <p className="font-medium text-blue-600 dark:text-blue-300 animate-pulse">
+                                        {isProcessingScan && `Checking library for ISBN: ${lastScannedIsbn}...`}
+                                        {isConfirmingAdd && `Adding book with ISBN: ${scanResult.isbnToConfirm}...`}
+                                    </p>
+                                </div>
                             )}
 
-                            {scanResult.message && (
-                                <div className="mt-6 p-4 rounded-md text-sm border dark:border-gray-600">
-                                    <p className={`font-semibold mb-2 ${
+                            {scanResult.message && !isProcessingScan && !isConfirmingAdd && (
+                                <div className={`mt-6 p-4 rounded-md text-sm border ${
+                                    scanResult.type.includes('error') ? 'bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-700' :
+                                    scanResult.type.includes('found') || scanResult.type.includes('added') || scanResult.type === 'success' ? 'bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700' :
+                                    'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700' // For info, prompt
+                                }`}>
+                                    <p className={`flex items-center font-semibold mb-2 text-base ${
                                         scanResult.type.includes('error') ? 'text-red-700 dark:text-red-300' :
-                                        scanResult.type === ('found_in_library') || scanResult.type === ('added_to_library') || scanResult.type === 'success' ? 'text-green-700 dark:text-green-300' :
+                                        scanResult.type.includes('found') || scanResult.type.includes('added') || scanResult.type === 'success' ? 'text-green-700 dark:text-green-300' :
                                         'text-blue-700 dark:text-blue-300'
                                     }`}>
-                                        {scanResult.type === 'found_in_library' ? 'Book Found in Library!' :
-                                         scanResult.type === 'added_to_library' ? 'Book Added to Library!' :
+                                        {scanResult.type.includes('error') && <ExclamationTriangleIcon />}
+                                        {(scanResult.type.includes('found') || scanResult.type.includes('added') || scanResult.type === 'success') && <CheckCircleIcon />}
+                                        {(scanResult.type === 'info' || scanResult.type === 'not_in_library_prompt_add') && <InformationCircleIcon />}
+
+                                        {scanResult.type === 'found_in_library' ? 'Book Found in Your Library!' :
+                                         scanResult.type === 'added_to_library' ? 'Book Added to Your Library!' :
                                          scanResult.type === 'not_in_library_prompt_add' ? 'Book Not in Library' :
                                          scanResult.type === 'success' ? 'Success!' :
-                                         scanResult.type.includes('error') ? 'Error' :
-                                         'Status'}
+                                         scanResult.type.includes('error') ? 'An Error Occurred' :
+                                         'Scan Status'}
                                     </p>
-                                    <p className="text-gray-700 dark:text-gray-300">{scanResult.message}</p>
+                                    <p className="text-gray-700 dark:text-gray-400 ml-7">{scanResult.message}</p>
 
                                     {scanResult.book && (scanResult.type === 'found_in_library' || scanResult.type === 'added_to_library') && (
-                                        <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md border dark:border-gray-600">
-                                            {/* ... book details rendering same as before ... */}
-                                            <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-100">{scanResult.book.title}</h4>
-                                            {scanResult.book.author && <p className="text-sm text-gray-600 dark:text-gray-400">by {scanResult.book.author}</p>}
+                                        <div className="mt-4 ml-7 p-4 bg-white dark:bg-gray-700/70 rounded-md border border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row items-center gap-4">
                                             {scanResult.book.cover_image_url && (
-                                                <img src={scanResult.book.cover_image_url} alt={`Cover of ${scanResult.book.title}`} className="mt-2 h-32 w-auto object-contain rounded shadow" onError={(e) => e.target.style.display='none'}/>
+                                                <img src={scanResult.book.cover_image_url} alt={`Cover of ${scanResult.book.title}`} className="w-24 h-36 object-contain rounded shadow-md flex-shrink-0" onError={(e) => e.target.src='https://placehold.co/96x144/e0e0e0/757575?text=N/A'}/>
                                             )}
-                                            <p className={`mt-2 text-sm font-medium ${scanResult.book.is_read ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
-                                                Status: {scanResult.book.is_read ? 'Read' : 'Unread'}
-                                            </p>
-                                            {scanResult.type === 'found_in_library' && scanResult.book.id && (
-                                                <Link href={route('books.edit', scanResult.book.id)} className="mt-3 inline-block">
-                                                    <SecondaryButton size="sm">View/Edit Details</SecondaryButton>
-                                                </Link>
-                                            )}
+                                            <div className="text-center sm:text-left">
+                                                <h4 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{scanResult.book.title}</h4>
+                                                {scanResult.book.author && <p className="text-sm text-gray-600 dark:text-gray-400">by {scanResult.book.author}</p>}
+                                                <p className={`mt-1 text-sm font-medium ${scanResult.book.is_read ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
+                                                    Status: {scanResult.book.is_read ? 'Read' : 'Unread'}
+                                                </p>
+                                                {scanResult.type === 'found_in_library' && scanResult.book.id && (
+                                                    <Link href={route('books.edit', scanResult.book.id)} className="mt-2 inline-block">
+                                                        <SecondaryButton size="sm">View/Edit Details</SecondaryButton>
+                                                    </Link>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                     
                                     {scanResult.type === 'not_in_library_prompt_add' && scanResult.isbnToConfirm && (
-                                        <div className="mt-4 space-x-2">
-                                            <PrimaryButton onClick={handleConfirmAddBook} disabled={isConfirmingAdd}>
+                                        <div className="mt-4 ml-7 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center gap-3">
+                                            <PrimaryButton onClick={handleConfirmAddBook} disabled={isConfirmingAdd} className="w-full sm:w-auto justify-center">
                                                 {isConfirmingAdd ? 'Adding...' : `Add ISBN: ${scanResult.isbnToConfirm}`}
                                             </PrimaryButton>
-                                            <SecondaryButton onClick={clearScanResult} disabled={isConfirmingAdd}>
+                                            <SecondaryButton onClick={clearScanResult} disabled={isConfirmingAdd} className="w-full sm:w-auto justify-center">
                                                 Cancel
                                             </SecondaryButton>
+                                            <Link href={route('books.create', { isbn: scanResult.isbnToConfirm, title: scanResult.book?.title })} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline mt-2 sm:mt-0 sm:ml-auto">
+                                                Add Manually with Details
+                                            </Link>
                                         </div>
                                     )}
 
-                                    {/* "Scan Another" button appears if not prompting to add and not currently processing initial scan */}
-                                    {scanResult.type !== 'not_in_library_prompt_add' && !isProcessingScan && (
-                                        <div className="mt-4">
-                                            <PrimaryButton onClick={clearScanResult}>Scan Another Book</PrimaryButton>
+                                    {scanResult.type !== 'not_in_library_prompt_add' && (
+                                        <div className="mt-4 ml-7 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                            <PrimaryButton onClick={clearScanResult} className="w-full sm:w-auto justify-center">Scan Another Book</PrimaryButton>
                                         </div>
                                     )}
                                 </div>
                             )}
                              {!isProcessingScan && !isConfirmingAdd && !scanResult.message && lastScannedIsbn && (
-                                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">Last ISBN scanned: {lastScannedIsbn}. Ready for new scan or waiting for server details.</p>
+                                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">Last ISBN scanned: {lastScannedIsbn}. Ready for new scan.</p>
                             )}
                         </div>
                     </div>

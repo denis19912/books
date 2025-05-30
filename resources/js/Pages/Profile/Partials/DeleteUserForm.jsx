@@ -1,3 +1,4 @@
+// resources/js/Pages/Profile/Partials/DeleteUserForm.jsx
 import DangerButton from '@/Components/DangerButton';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -14,11 +15,11 @@ export default function DeleteUserForm({ className = '' }) {
     const {
         data,
         setData,
-        delete: destroy,
+        delete: destroy, // Renaming 'delete' to 'destroy' to avoid conflict with JS keyword
         processing,
         reset,
         errors,
-        clearErrors,
+        clearErrors, // Added clearErrors to useForm
     } = useForm({
         password: '',
     });
@@ -30,7 +31,7 @@ export default function DeleteUserForm({ className = '' }) {
     const deleteUser = (e) => {
         e.preventDefault();
 
-        destroy(route('profile.destroy'), {
+        destroy(route('profile.destroy'), { // Using 'destroy' here
             preserveScroll: true,
             onSuccess: () => closeModal(),
             onError: () => passwordInput.current.focus(),
@@ -40,19 +41,18 @@ export default function DeleteUserForm({ className = '' }) {
 
     const closeModal = () => {
         setConfirmingUserDeletion(false);
-
-        clearErrors();
+        clearErrors(); // Clear errors when modal is closed
         reset();
     };
 
     return (
         <section className={`space-y-6 ${className}`}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                     Delete Account
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     Once your account is deleted, all of its resources and data
                     will be permanently deleted. Before deleting your account,
                     please download any data or information that you wish to
@@ -64,13 +64,15 @@ export default function DeleteUserForm({ className = '' }) {
                 Delete Account
             </DangerButton>
 
-            <Modal show={confirmingUserDeletion} onClose={closeModal}>
-                <form onSubmit={deleteUser} className="p-6">
-                    <h2 className="text-lg font-medium text-gray-900">
+            {/* Assuming Modal component internally handles its own dark mode background and text for title/content areas */}
+            {/* We will style the form elements within the modal here */}
+            <Modal show={confirmingUserDeletion} onClose={closeModal} maxWidth="lg">
+                <form onSubmit={deleteUser} className="p-6 bg-white dark:bg-gray-800 rounded-lg">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                         Are you sure you want to delete your account?
                     </h2>
 
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         Once your account is deleted, all of its resources and
                         data will be permanently deleted. Please enter your
                         password to confirm you would like to permanently delete
@@ -81,7 +83,7 @@ export default function DeleteUserForm({ className = '' }) {
                         <InputLabel
                             htmlFor="password"
                             value="Password"
-                            className="sr-only"
+                            className="sr-only dark:text-gray-300" // sr-only but add dark text for consistency if it were visible
                         />
 
                         <TextInput
@@ -93,9 +95,10 @@ export default function DeleteUserForm({ className = '' }) {
                             onChange={(e) =>
                                 setData('password', e.target.value)
                             }
-                            className="mt-1 block w-3/4"
+                            className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700"
                             isFocused
                             placeholder="Password"
+                            required // Added required for password confirmation
                         />
 
                         <InputError
@@ -104,12 +107,12 @@ export default function DeleteUserForm({ className = '' }) {
                         />
                     </div>
 
-                    <div className="mt-6 flex justify-end">
-                        <SecondaryButton onClick={closeModal}>
+                    <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
+                        <SecondaryButton onClick={closeModal} className="w-full sm:w-auto justify-center">
                             Cancel
                         </SecondaryButton>
 
-                        <DangerButton className="ms-3" disabled={processing}>
+                        <DangerButton className="w-full sm:w-auto justify-center" disabled={processing}>
                             Delete Account
                         </DangerButton>
                     </div>
