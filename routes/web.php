@@ -33,9 +33,9 @@ Route::get('/dashboard', function () {
     $user = Auth::user(); // Get the authenticated user
 
     // Calculate the stats
-    $totalBooks =1;
-    $booksRead = 2;
-    $booksUnread =0;
+    $totalBooks = $user->books()->count();
+    $booksRead = $user->books()->where('is_read', true)->count();
+    $booksUnread = $user->books()->where('is_read', false)->count();
 
     // Pass the stats to the Dashboard.jsx component
     return Inertia::render('Dashboard', [
