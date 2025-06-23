@@ -22,6 +22,7 @@
         "vite": "^6.2.4"
     },
     "dependencies": {
-        "@ericblade/quagga2": "^1.8.4"
+        "@ericblade/quagga2": "^1.8.4",
+        "swiper": "^11.2.8"
     }
 }
